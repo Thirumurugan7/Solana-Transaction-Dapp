@@ -1,12 +1,48 @@
-import { FC } from 'react'
+import { FC,useEffect,useState } from 'react'
 import styles from '../styles/Home.module.css'
-
+import { useConnection, useWallet } from '@solana/wallet-adapter-react'
+import * as web3 from "@solana/web3.js";
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 
 export const SendSolForm: FC = () => {
+    const [txSig, setTxSig] = useState('');
+    const { connection} = useConnection();
+
+    const{publicKey, sendTransaction} = useWallet();
+    useEffect(()=>{
+        console.log(link())
+
+    },[txSig])
+
+    const link = () => {
+return txSig ?  `https://explorer.solana.com/tx/${txSig}?cluster=devnet` : ''
+    }
 
     const sendSol = event => {
+
         event.preventDefault()
         console.log(`Send ${event.target.amount.value} SOL to ${event.target.recipient.value}`)
+console.log(connection,publicKey)
+        if(!connection || !publicKey){
+            return
+        }
+
+        const transaction = new web3.Transaction();
+        const recipientPubKey = new web3.PublicKey(event.target.recipient.value)
+
+        const sendSolInstruction = web3.SystemProgram.transfer({
+            fromPubkey: publicKey,
+            toPubkey: recipientPubKey,
+            lamports: LAMPORTS_PER_SOL * event.target.amount.value
+        });
+
+        transaction.add(sendSolInstruction);
+
+        sendTransaction(transaction,connection).then(sig => {
+            setTxSig(sig)
+        })
+
+        console.log(txSig)
     }
 
     return (
